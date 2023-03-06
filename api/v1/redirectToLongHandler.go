@@ -1,0 +1,45 @@
+package v1
+
+import (
+	"github.com/gin-gonic/gin"
+	"net/http"
+	"time"
+)
+
+// RedirectToLongHandler                godoc
+// @Summary      Перенаправляет пользователя по ссылке.
+// @Description  В строку запроса передаётся краткая ссылка, по ней происходит перенаправление на длинную ссылку.
+// @Success      301
+// @Failure      404
+// @Router       /{short_url} [get]
+func (t *TaskServerV1) RedirectToLongHandler(c *gin.Context) {
+	shortUrl := c.Param("shortUrl")
+	url, isExist, err := t.PgContext.GetUrl("short_url", shortUrl, false)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if isExist {
+		c.Redirect(http.StatusMovedPermanently, url.LongUrl)
+		return
+	}
+
+	url, isExist, err = t.PgContext.GetUrl("short_url", shortUrl, true)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if isExist {
+		if url.UrlWillDelete.Time.After(time.Now().UTC()) {
+			err = t.PgContext.IncrementUrlClicks(url.SecretKey)
+			c.Redirect(http.StatusMovedPermanently, url.LongUrl)
+			return
+		}
+		err = t.PgContext.DeleteUrl("short_url", url.ShortUrl)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+	}
+	c.JSON(http.StatusNotFound, gin.H{"error": "url not found"})
+}

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 // GetLinkInfoHandler                godoc
@@ -23,11 +24,12 @@ func (t *TaskServerV1) GetLinkInfoHandler(c *gin.Context) {
 	}
 	if isExist {
 		c.JSON(200, gin.H{
-			"short_url":        url.ShortUrl,
-			"long_url":         url.LongUrl,
-			"number_of_clicks": url.UrlClicks,
-			"dt_created":       url.UrlCreatedAt.Time.UTC(),
-			"dt_will_delete":   url.UrlWillDelete.Time.UTC(),
+			"short_url":          url.ShortUrl,
+			"long_url":           url.LongUrl,
+			"number_of_clicks":   url.UrlClicks,
+			"dt_created":         url.UrlCreatedAt.Time.UTC(),
+			"dt_will_delete":     url.UrlWillDelete.Time.UTC(),
+			"all_redirect_times": []time.Time{},
 		})
 		return
 	}
@@ -38,12 +40,28 @@ func (t *TaskServerV1) GetLinkInfoHandler(c *gin.Context) {
 		return
 	}
 	if isExist {
+		if url.UrlWillDelete.Time.Before(time.Now().UTC()) {
+			err = t.PgContext.DeleteUrl("short_url", url.ShortUrl)
+			if err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
+			c.JSON(404, gin.H{"error": "url not found"})
+			return
+		}
+		times, err := t.PgContext.GetAllRedirectTimes(url.Id)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
 		c.JSON(200, gin.H{
-			"short_url":        url.ShortUrl,
-			"long_url":         url.LongUrl,
-			"number_of_clicks": url.UrlClicks,
-			"dt_created":       url.UrlCreatedAt.Time.UTC(),
-			"dt_will_delete":   url.UrlWillDelete.Time.UTC(),
+			"short_url":          url.ShortUrl,
+			"long_url":           url.LongUrl,
+			"number_of_clicks":   url.UrlClicks,
+			"dt_created":         url.UrlCreatedAt.Time.UTC(),
+			"dt_will_delete":     url.UrlWillDelete.Time.UTC(),
+			"all_redirect_times": times,
 		})
 		return
 	}
@@ -52,11 +70,12 @@ func (t *TaskServerV1) GetLinkInfoHandler(c *gin.Context) {
 
 // response struct for the GetLinkInfoHandler
 type getLinkInfoResponse struct {
-	ShortUrl      string `json:"short_url"`
-	LongUrl       string `json:"long_url"`
-	NumberOfClick int    `json:"number_of_clicks"`
-	DtCreated     string `json:"dt_created"`
-	DtWillDelete  string `json:"dt_will_delete" nullable:"true"`
+	ShortUrl         string      `json:"short_url"`
+	LongUrl          string      `json:"long_url"`
+	NumberOfClick    int         `json:"number_of_clicks"`
+	DtCreated        string      `json:"dt_created"`
+	DtWillDelete     string      `json:"dt_will_delete"`
+	AllRedirectTimes []time.Time `json:"all_redirect_times"`
 }
 
 // response struct for the error

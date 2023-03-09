@@ -62,6 +62,75 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/auth": {
+            "post": {
+                "description": "В формате json передаётся login и password. В ответ возвращается токен.",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Авторизует пользователя.",
+                "parameters": [
+                    {
+                        "description": "make_shorter_request",
+                        "name": "auth_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.requestAuth"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.responseAuth"
+                        }
+                    },
+                    "400": {
+                        "description": "Возвращает \"bad password\" если пароль не валидный, \"user not found\" если пользователь не найден, \"wrong password\" если пароль не совпадает",
+                        "schema": {
+                            "$ref": "#/definitions/v1.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/get_urls_list/{token}": {
+            "get": {
+                "description": "В строку запроса передаётся токен, по которому возвращается массив.",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Возвращает массив секретных ключей.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.getUrlsListResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/v1.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/make_shorter": {
             "post": {
                 "description": "В формате json передаётся url и опционально остальные параметры. В ответ возвращаются секретный ключ и краткая ссылка. Если не передан vip_key, то ссылка автоматически генерируется, а если передан, то vip_key и будет использоваться как краткий ключ.",
@@ -71,7 +140,7 @@ const docTemplate = `{
                 "summary": "Создаёт ссылку.",
                 "parameters": [
                     {
-                        "description": "Я не разобрался как тут указать, что всё кроме url nullable, поэтому напоминаю! И ещё, если всё-таки делаете vip-key, то обязательными становятся все поля",
+                        "description": "Я не разобрался как тут указать, что всё кроме url nullable, поэтому напоминаю! И ещё, если всё-таки делаете vip-key, то обязательными становятся все поля. time_to_live_unit может принимать значения SECONDS, MINUTES, HOURS, DAYS",
                         "name": "make_shorter_request",
                         "in": "body",
                         "required": true,
@@ -89,6 +158,52 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Сообщения при различных ошибках валидации. Если передано пустое поле url, то возвращается ошибка \"url is empty\". Если передано некорректное значение time_to_live_unit или time_to_live \u003c= 0, то возвращается ошибка \"time to live unit or time to live is invalid\". Если vip_key уже сущетсвует в базе данных, то возвращается ошибка \"vip key is already in use\".",
+                        "schema": {
+                            "$ref": "#/definitions/v1.errorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Если токен не найден",
+                        "schema": {
+                            "$ref": "#/definitions/v1.errorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/v1.errorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/registration": {
+            "post": {
+                "description": "В формате json передаётся login, email и password. В ответ возвращается токен.",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Регистрирует пользователя.",
+                "parameters": [
+                    {
+                        "description": "requestUser",
+                        "name": "registration_request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/v1.requestUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/v1.responseAuth"
+                        }
+                    },
+                    "400": {
+                        "description": "Возвращается, если нет такого токена",
                         "schema": {
                             "$ref": "#/definitions/v1.errorResponse"
                         }
@@ -129,6 +244,12 @@ const docTemplate = `{
         "v1.getLinkInfoResponse": {
             "type": "object",
             "properties": {
+                "all_redirect_times": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
                 "dt_created": {
                     "type": "string"
                 },
@@ -146,6 +267,28 @@ const docTemplate = `{
                 }
             }
         },
+        "v1.getUrlsListResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "v1.requestAuth": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
         "v1.requestMakeShorter": {
             "type": "object",
             "properties": {
@@ -155,10 +298,35 @@ const docTemplate = `{
                 "time_to_live_unit": {
                     "type": "string"
                 },
+                "token": {
+                    "type": "string"
+                },
                 "url": {
                     "type": "string"
                 },
                 "vip_key": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.requestUser": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "login": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            }
+        },
+        "v1.responseAuth": {
+            "type": "object",
+            "properties": {
+                "token": {
                     "type": "string"
                 }
             }

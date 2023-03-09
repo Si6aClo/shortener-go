@@ -3,6 +3,8 @@ package v1
 import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgtype"
+	"shortener/db"
 	"shortener/utils"
 	"time"
 )
@@ -12,10 +14,11 @@ var liveUnits = []string{"SECONDS", "MINUTES", "HOURS", "DAYS"}
 // MakeShorterHandler                godoc
 // @Summary      Создаёт ссылку.
 // @Description  В формате json передаётся url и опционально остальные параметры. В ответ возвращаются секретный ключ и краткая ссылка. Если не передан vip_key, то ссылка автоматически генерируется, а если передан, то vip_key и будет использоваться как краткий ключ.
-// @Param        make_shorter_request body  requestMakeShorter  true  "Я не разобрался как тут указать, что всё кроме url nullable, поэтому напоминаю! И ещё, если всё-таки делаете vip-key, то обязательными становятся все поля"
+// @Param        make_shorter_request body  requestMakeShorter  true  "Я не разобрался как тут указать, что всё кроме url nullable, поэтому напоминаю! И ещё, если всё-таки делаете vip-key, то обязательными становятся все поля. time_to_live_unit может принимать значения SECONDS, MINUTES, HOURS, DAYS"
 // @Produce      json
 // @Success      200  {object}  responseMakeShorter
 // @Failure      400  {object}  errorResponse "Сообщения при различных ошибках валидации. Если передано пустое поле url, то возвращается ошибка "url is empty". Если передано некорректное значение time_to_live_unit или time_to_live <= 0, то возвращается ошибка "time to live unit or time to live is invalid". Если vip_key уже сущетсвует в базе данных, то возвращается ошибка "vip key is already in use"."
+// @Failure      404  {object}  errorResponse "Если токен не найден"
 // @Failure      500  {object}  errorResponse
 // @Router       /api/v1/make_shorter [post]
 func (t *TaskServerV1) MakeShorterHandler(c *gin.Context) {
@@ -24,6 +27,7 @@ func (t *TaskServerV1) MakeShorterHandler(c *gin.Context) {
 		VipKey         string `json:"vip_key"`
 		TimeToLive     int    `json:"time_to_live"`
 		TimeToLiveUnit string `json:"time_to_live_unit"`
+		Token          string `json:"token"`
 	}
 	prefix := "http://localhost:8080/"
 
@@ -44,6 +48,11 @@ func (t *TaskServerV1) MakeShorterHandler(c *gin.Context) {
 		return
 	}
 
+	// if request.Url don't have http:// or https:// prefix, then add it
+	if !utils.IsUrl(request.Url) {
+		request.Url = "http://" + request.Url
+	}
+
 	if request.VipKey == "" {
 		url, isExist, err := t.PgContext.GetUrl("long_url", request.Url, false)
 		if err != nil {
@@ -55,7 +64,7 @@ func (t *TaskServerV1) MakeShorterHandler(c *gin.Context) {
 			return
 		}
 		shortUrlGen := utils.GenerateShortUrl(t.PgContext)
-		err = t.PgContext.InsertUrl(request.Url, shortUrlGen, false)
+		err = t.PgContext.InsertUrl(request.Url, shortUrlGen, false, pgtype.Timestamp{}, pgtype.UUID{})
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -94,7 +103,19 @@ func (t *TaskServerV1) MakeShorterHandler(c *gin.Context) {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
-		err = t.PgContext.InsertUrl(request.Url, request.VipKey, true, newUrlWillDelete)
+
+		user, userErr := t.PgContext.GetUser("token", request.Token)
+		if _, ok := userErr.(*db.NotFoundUserError); ok {
+			c.JSON(404, gin.H{"error": "user not found"})
+			return
+		}
+
+		if userErr != nil {
+			c.JSON(500, gin.H{"error": userErr.Error()})
+			return
+		}
+
+		err = t.PgContext.InsertUrl(request.Url, request.VipKey, true, newUrlWillDelete, user.Id)
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
 			return
@@ -121,4 +142,5 @@ type requestMakeShorter struct {
 	VipKey         string `json:"vip_key"`
 	TimeToLive     int    `json:"time_to_live"`
 	TimeToLiveUnit string `json:"time_to_live_unit"`
+	Token          string `json:"token"`
 }

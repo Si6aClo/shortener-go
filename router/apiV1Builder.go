@@ -14,6 +14,9 @@ func buildV1Api(router *gin.Engine) {
 		v1Group.POST("/make_shorter", server.MakeShorterHandler)
 		v1Group.DELETE("/admin/:secretKey", server.DeleteLinkHandler)
 		v1Group.GET("/admin/:secretKey", server.GetLinkInfoHandler)
+		v1Group.GET("/get_urls_list/:token", server.GetUrlsListHandler)
+		v1Group.POST("/registration", server.RegistrationHandler)
+		v1Group.POST("/auth", server.AuthHandler)
 	}
 
 	router.GET("/:shortUrl", server.RedirectToLongHandler)

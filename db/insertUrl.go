@@ -2,14 +2,14 @@ package db
 
 import "github.com/jackc/pgtype"
 
-func (pgContext *PgContext) InsertUrl(longUrl string, shortUrl string, isVip bool, urlWillDelete ...pgtype.Timestamp) error {
+func (pgContext *PgContext) InsertUrl(longUrl string, shortUrl string, isVip bool, urlWillDelete pgtype.Timestamp, userId pgtype.UUID) error {
 	query := pgContext.Psql.Insert("url_storage").
 		Columns("long_url", "short_url")
 
 	if isVip {
 		// insert url_will_delete with UTC timezone
-		query = query.Columns("url_will_delete", "is_vip").
-			Values(longUrl, shortUrl, urlWillDelete[0], true)
+		query = query.Columns("url_will_delete", "is_vip", "user_id").
+			Values(longUrl, shortUrl, urlWillDelete, true, userId)
 	} else {
 		query = query.Values(longUrl, shortUrl)
 	}

@@ -7,6 +7,7 @@ import (
 
 // Url is the struct for the url_storage table
 type Url struct {
+	Id            pgtype.UUID
 	LongUrl       string
 	ShortUrl      string
 	SecretKey     pgtype.UUID
@@ -18,7 +19,7 @@ type Url struct {
 
 // GetUrl returns all info from db for a given url, getBy can be "long_url" or "short_url"
 func (pgContext *PgContext) GetUrl(getBy string, url string, isVip bool) (Url, bool, error) {
-	basicSq := pgContext.Psql.Select("long_url",
+	basicSq := pgContext.Psql.Select("id", "long_url",
 		"short_url",
 		"secret_key",
 		"url_clicks",
@@ -36,7 +37,7 @@ func (pgContext *PgContext) GetUrl(getBy string, url string, isVip bool) (Url, b
 
 	row := pgContext.DB.QueryRow(query, args...)
 	var urlStruct Url
-	err = row.Scan(&urlStruct.LongUrl,
+	err = row.Scan(&urlStruct.Id, &urlStruct.LongUrl,
 		&urlStruct.ShortUrl,
 		&urlStruct.SecretKey,
 		&urlStruct.UrlClicks,

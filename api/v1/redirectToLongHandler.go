@@ -20,6 +20,16 @@ func (t *TaskServerV1) RedirectToLongHandler(c *gin.Context) {
 		return
 	}
 	if isExist {
+		err = t.PgContext.InsertClickInfo(url.Id)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+		err = t.PgContext.IncrementUrlClicks(url.SecretKey)
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
 		c.Redirect(http.StatusMovedPermanently, url.LongUrl)
 		return
 	}
@@ -31,7 +41,16 @@ func (t *TaskServerV1) RedirectToLongHandler(c *gin.Context) {
 	}
 	if isExist {
 		if url.UrlWillDelete.Time.After(time.Now().UTC()) {
+			err = t.PgContext.InsertClickInfo(url.Id)
+			if err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
 			err = t.PgContext.IncrementUrlClicks(url.SecretKey)
+			if err != nil {
+				c.JSON(500, gin.H{"error": err.Error()})
+				return
+			}
 			c.Redirect(http.StatusMovedPermanently, url.LongUrl)
 			return
 		}

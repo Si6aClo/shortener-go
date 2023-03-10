@@ -12,7 +12,7 @@ import (
 // @Param        registration_request body  requestUser  true "requestUser"
 // @Produce      json
 // @Success      200  {object}  responseAuth
-// @Failure      400  {object}  errorResponse "Возвращается, если нет такого токена"
+// @Failure      400  {object}  errorResponse "Возвращается, если email не прошёл валидацию или пользователь с таким login или email уже существует."
 // @Failure      500  {object}  errorResponse
 // @Router       /api/v1/registration [post]
 func (t *TaskServerV1) RegistrationHandler(c *gin.Context) {

@@ -116,8 +116,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/v1.getUrlsListResponse"
                         }
                     },
-                    "404": {
-                        "description": "Not Found",
+                    "401": {
+                        "description": "Если токен не найден",
                         "schema": {
                             "$ref": "#/definitions/v1.errorResponse"
                         }
@@ -162,7 +162,7 @@ const docTemplate = `{
                             "$ref": "#/definitions/v1.errorResponse"
                         }
                     },
-                    "404": {
+                    "401": {
                         "description": "Если токен не найден",
                         "schema": {
                             "$ref": "#/definitions/v1.errorResponse"
@@ -203,7 +203,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Возвращается, если нет такого токена",
+                        "description": "Возвращается, если email не прошёл валидацию или пользователь с таким login или email уже существует.",
                         "schema": {
                             "$ref": "#/definitions/v1.errorResponse"
                         }

@@ -8,7 +8,7 @@ import (
 // GenerateShortUrl gereates a short url with a length of 6 and characters from A-Z, 0-9
 // check is done to ensure that the generated short url is not already present in the database
 // and returns it as a string with hostname as prefix
-func GenerateShortUrl(pgContext *db.PgContext) string {
+func GenerateShortUrl(pgContext db.PgCaller) string {
 	// generate a random string of length 6
 	shortUrl := generateRandomString(6)
 

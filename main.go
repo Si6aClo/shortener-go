@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"shortener/db"
 	_ "shortener/docs"
 	r "shortener/router"
 )
@@ -20,7 +21,11 @@ func init() {
 // @description     Сервис, позволяющий укорачивать ссылки.
 func main() {
 	router := gin.Default()
-	r.SetupRouter(router)
+	caller, err := db.NewDB()
+	if err != nil {
+		panic(err)
+	}
+	r.SetupRouter(router, caller)
 	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	_ = router.Run(":8080")
 }

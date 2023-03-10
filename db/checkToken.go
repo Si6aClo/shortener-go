@@ -2,11 +2,10 @@ package db
 
 import (
 	sq "github.com/Masterminds/squirrel"
-	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 )
 
-func (pgContext *PgContext) CheckToken(token uuid.UUID) bool {
+func (pgContext *PgContext) CheckToken(token string) bool {
 	query := pgContext.Psql.Select("id").
 		From("users").
 		Where(sq.Eq{"token": token})

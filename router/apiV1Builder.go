@@ -3,10 +3,11 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"shortener/api/v1"
+	"shortener/db"
 )
 
-func buildV1Api(router *gin.Engine) {
-	server := v1.NewTaskServerV1()
+func buildV1Api(router *gin.Engine, caller db.PgCaller) {
+	server := v1.NewTaskServerV1(caller)
 	// add the v1 api group
 	v1Group := router.Group("/api/v1")
 	{

@@ -156,8 +156,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/v1.getUrlsListResponse'
-        "404":
-          description: Not Found
+        "401":
+          description: Если токен не найден
           schema:
             $ref: '#/definitions/v1.errorResponse'
         "500":
@@ -196,7 +196,7 @@ paths:
             в базе данных, то возвращается ошибка "vip key is already in use".
           schema:
             $ref: '#/definitions/v1.errorResponse'
-        "404":
+        "401":
           description: Если токен не найден
           schema:
             $ref: '#/definitions/v1.errorResponse'
@@ -224,7 +224,8 @@ paths:
           schema:
             $ref: '#/definitions/v1.responseAuth'
         "400":
-          description: Возвращается, если нет такого токена
+          description: Возвращается, если email не прошёл валидацию или пользователь
+            с таким login или email уже существует.
           schema:
             $ref: '#/definitions/v1.errorResponse'
         "500":

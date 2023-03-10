@@ -5,15 +5,11 @@ import (
 )
 
 type TaskServerV1 struct {
-	PgContext *db.PgContext
+	PgContext db.PgCaller
 }
 
 // NewTaskServerV1 creates a new TaskServerV1 with created database connection
-func NewTaskServerV1() *TaskServerV1 {
-	pgContext, err := db.NewDB()
-	if err != nil {
-		panic(err)
-	}
+func NewTaskServerV1(pgContext db.PgCaller) *TaskServerV1 {
 	return &TaskServerV1{
 		PgContext: pgContext,
 	}

@@ -6,13 +6,13 @@ import (
 )
 
 // GenerateToken generates a random uuid token
-func GenerateToken(pgContext *db.PgContext) uuid.UUID {
+func GenerateToken(pgContext db.PgCaller) uuid.UUID {
 	token, err := uuid.NewUUID()
 	if err != nil {
 		panic(err)
 	}
 
-	for pgContext.CheckToken(token) {
+	for pgContext.CheckToken(token.String()) {
 		token, err = uuid.NewUUID()
 		if err != nil {
 			panic(err)

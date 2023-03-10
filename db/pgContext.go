@@ -14,7 +14,7 @@ type PgContext struct {
 }
 
 // NewDB creates a new database sqlx connection with standard settings
-func NewDB() (*PgContext, error) {
+func NewDB() (PgCaller, error) {
 	db, err := sqlx.Open("pgx", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, err

@@ -18,7 +18,7 @@ var liveUnits = []string{"SECONDS", "MINUTES", "HOURS", "DAYS"}
 // @Produce      json
 // @Success      200  {object}  responseMakeShorter
 // @Failure      400  {object}  errorResponse "Сообщения при различных ошибках валидации. Если передано пустое поле url, то возвращается ошибка "url is empty". Если передано некорректное значение time_to_live_unit или time_to_live <= 0, то возвращается ошибка "time to live unit or time to live is invalid". Если vip_key уже сущетсвует в базе данных, то возвращается ошибка "vip key is already in use"."
-// @Failure      404  {object}  errorResponse "Если токен не найден"
+// @Failure      401  {object}  errorResponse "Если токен не найден"
 // @Failure      500  {object}  errorResponse
 // @Router       /api/v1/make_shorter [post]
 func (t *TaskServerV1) MakeShorterHandler(c *gin.Context) {
@@ -77,6 +77,11 @@ func (t *TaskServerV1) MakeShorterHandler(c *gin.Context) {
 		}
 		c.JSON(200, gin.H{"short_url": prefix + shortUrlGen, "secret_key": url.SecretKey})
 	} else {
+		user, userErr := t.PgContext.GetUser("token", request.Token)
+		if _, ok := userErr.(*db.NotFoundUserError); ok {
+			c.JSON(401, gin.H{"error": "user unauthorized"})
+			return
+		}
 		if !utils.IsInArray(request.TimeToLiveUnit, liveUnits) || request.TimeToLive <= 0 {
 			c.JSON(400, gin.H{"error": "time to live unit or time to live is invalid"})
 			return
@@ -101,12 +106,6 @@ func (t *TaskServerV1) MakeShorterHandler(c *gin.Context) {
 		newUrlWillDelete, err := utils.ParseLiveTime(request.TimeToLiveUnit, request.TimeToLive)
 		if err != nil {
 			c.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-
-		user, userErr := t.PgContext.GetUser("token", request.Token)
-		if _, ok := userErr.(*db.NotFoundUserError); ok {
-			c.JSON(404, gin.H{"error": "user not found"})
 			return
 		}
 
